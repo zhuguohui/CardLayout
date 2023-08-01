@@ -1,6 +1,8 @@
 # 效果
 支持左右上 三个方向删除内容，支持下拉显示上一个。支持adapter 支持复用。
+
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/ca082817b6b04e178f4c6af78b44051d.gif#pic_center)
+
 ## 支持通过API移除卡片
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/2a227d06bb2c4fb2991f520da4a25f8d.gif#pic_center)
 
