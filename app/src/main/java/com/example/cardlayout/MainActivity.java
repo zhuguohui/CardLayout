@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
             final int[] bgColors=new int[]{Color.RED,Color.GREEN,Color.BLUE};
             @Override
             public View getView(int position, LayoutInflater inflater, ViewGroup viewGroup) {
-                Log.i("zzz", "getView: position="+position);
+
                 return inflater.inflate(R.layout.demo_item,viewGroup,false);
             }
 
@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void bindData(View view, int position) {
-                Log.i("zzz", "bindData: position="+position);
+
                 TextView tv= (TextView) view;
                 tv.setText("数据:"+position);
                 tv.setBackgroundColor(bgColors[position%bgColors.length]);

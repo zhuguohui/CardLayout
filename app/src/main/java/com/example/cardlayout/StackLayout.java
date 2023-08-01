@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -35,6 +36,7 @@ public class StackLayout extends ViewGroup {
 
     private final GestureDetector detector;
     private final Paint logPaint;
+
     public StackLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
         logPaint = new Paint();
@@ -93,10 +95,11 @@ public class StackLayout extends ViewGroup {
 
     }
 
+    private int recycleViewsMinSize = 2;
 
     private View tryGetViewByPosition(int position) {
         int count = adapter.getCount();
-        if (position > (count - 1)||position<0) {
+        if (position > (count - 1) || position < 0) {
             return null;
         }
 
@@ -110,21 +113,34 @@ public class StackLayout extends ViewGroup {
         //从回收列表中找一个
         View view = null;
         if (!recycledViews.isEmpty()) {
-            view = recycledViews.remove(recycledViews.size() - 1);
-            resetView(view);
-            StackLayoutParams sp = (StackLayoutParams) view.getLayoutParams();
-            if (sp.dataPosition == position) {
-                return view;
+
+            for (View reuseView : recycledViews) {
+                StackLayoutParams sp = (StackLayoutParams) reuseView.getLayoutParams();
+                if (sp.dataPosition == position) {
+                    recycledViews.remove(reuseView);
+                    resetView(reuseView);
+                    sp.dataPosition=position;
+                    return reuseView;
+                }
             }
+            if ( recycledViews.size() > recycleViewsMinSize) {
+                //recycledViews 作为一个队列使用。队列大小固定为2。
+                //如果recycleViews 的大小小于2
+                view = recycledViews.remove(0);
+                resetView(view);
+            }
+
         }
         //找不到新建一个
         if (view == null) {
             LayoutInflater inflater = LayoutInflater.from(getContext());
             view = adapter.getView(position, inflater, this);
+            Log.i("zzz", " 新建view position="+position);
         }
         StackLayoutParams sp = (StackLayoutParams) view.getLayoutParams();
         sp.dataPosition = position;
         adapter.bindData(view, position);
+        Log.i("zzz", " 绑定view数据 position="+position);
         return view;
     }
 
@@ -148,7 +164,6 @@ public class StackLayout extends ViewGroup {
         public void start() {
             direction = null;
         }
-
 
 
         private ValueAnimator animator;
@@ -218,15 +233,16 @@ public class StackLayout extends ViewGroup {
                             recycleView(child);
                         } else {
                             resetView(child);
+
                         }
                         //回收看不见的View
-                        int count=getChildCount();
-                        if(count>adapter.getVisibleCount()){
-                            List<View> needRecycleViews=new ArrayList<>();
-                            for(int i=adapter.getVisibleCount();i<count;i++){
+                        int count = getChildCount();
+                        if (count > adapter.getVisibleCount()) {
+                            List<View> needRecycleViews = new ArrayList<>();
+                            for (int i = adapter.getVisibleCount(); i < count; i++) {
                                 needRecycleViews.add(getChildAt(i));
                             }
-                            for(View view:needRecycleViews){
+                            for (View view : needRecycleViews) {
                                 recycleView(view);
                             }
                         }
@@ -281,14 +297,14 @@ public class StackLayout extends ViewGroup {
                 case RIGHT:
                 case Left:
                     translationX += (-distanceX);
-                    outOffset = Math.abs(translationX) / dragView.getWidth() ;
+                    outOffset = Math.abs(translationX) / dragView.getWidth();
                     break;
                 case TOP:
                 case BOTTOM:
                     if (translationY <= 0) {
                         translationY += (-distanceY);
                         translationY = Math.min(0, translationY);
-                        outOffset = Math.abs(translationY) / dragView.getHeight() ;
+                        outOffset = Math.abs(translationY) / dragView.getHeight();
                     }
                     break;
             }
@@ -354,16 +370,12 @@ public class StackLayout extends ViewGroup {
         view.setTranslationZ(100);
         view.setAlpha(0.5f);
         sp.isBefore = true;
-        sp.dataPosition = mFirstDataPosition;
         mFirstDataPosition--;
+        sp.dataPosition = mFirstDataPosition;
         sp.isDrag = true;
 
     }
 
-    private boolean hasBeforeData() {
-
-        return mFirstDataPosition > 0;
-    }
 
     private void resetView(View child) {
         if (child == null) {
@@ -467,7 +479,7 @@ public class StackLayout extends ViewGroup {
             child.layout(left, top, left + width, top + height);
 
         }
-        applyTranslation(0.5f);
+        applyTranslation(0);
     }
 
     private void applyTranslation(float outOffset) {
@@ -516,18 +528,14 @@ public class StackLayout extends ViewGroup {
             outOffset = 0;
             direction = null;
             isBefore = false;
-            dataPosition = NO_SET;
         }
 
-        public boolean hasBindDataPosition() {
-            return dataPosition != NO_SET;
-        }
     }
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
         super.dispatchDraw(canvas);
 
-        canvas.drawText("child count="+getChildCount(), (getWidth() >> 1)-200, (getHeight() >> 1)+200,logPaint);
+        canvas.drawText("child count=" + getChildCount(), (getWidth() >> 1) - 200, (getHeight() >> 1) + 200, logPaint);
     }
 }
